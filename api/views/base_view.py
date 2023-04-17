@@ -54,6 +54,26 @@ class BaseView(APIView, LimitOffsetPagination):
     print(resource.errors)
     return HttpResponse("Uprocessable entity")
 
+  def _authenticate(self, request):
+    if not request.user.is_authenticated:
+      return Response({ 'errors': { 'user': ['Login required to perform this action.'] } }, status=status.HTTP_401_UNAUTHORIZED)
+
+  def _developer(self, request):
+    if not request.user.role == 1:
+      return Response({ 'errors': { 'user': ['You are unauthorized to perform this action.'] } }, status=status.HTTP_403_FORBIDDEN)
+
+  def _manager(self, request):
+    if not request.user.role == 2:
+      return Response({ 'errors': { 'user': ['You are unauthorized to perform this action.'] } }, status=status.HTTP_403_FORBIDDEN)
+
+  def _qa(self, request):
+    if not request.user.role == 3:
+      return Response({ 'errors': { 'user': ['You are unauthorized to perform this action.'] } }, status=status.HTTP_403_FORBIDDEN)
+
+  def _admin(self, request):
+    if not request.user.role == 0:
+      return Response({ 'errors': { 'user': ['You are unauthorized to perform this action.'] } }, status=status.HTTP_403_FORBIDDEN)
+
   @property
   def _model(self):
     return apps.get_model('api', self._model_class_name, require_ready=True)

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+import datetime
 import environ
 
 env = environ.Env()
@@ -43,10 +44,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework'
+    'rest_framework',
+    'djoser'
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100
 }
@@ -78,6 +83,10 @@ TEMPLATES = [
         },
     },
 ]
+
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES':('JWT',),
+}
 
 WSGI_APPLICATION = 'bugzilla.wsgi.application'
 AUTH_USER_MODEL = 'api.User'
@@ -115,6 +124,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=int(env('ACCESS_TOKEN_LIFETIME'))),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=(int(env('REFRESH_TOKEN_LIFETIME')))),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False
+}
+
+DJOSER = {
+    'SERIALIZERS': {
+         'user_create': 'api.serializers.user_serializer.UserSerializer'
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/

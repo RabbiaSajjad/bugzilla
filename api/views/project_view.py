@@ -8,14 +8,19 @@ from api.views.base_view import BaseView
 
 class ProjectView(BaseView):
   def get(self, request, id=None):
-    return super().get(request,id)
+    return self._authenticate(request) or \
+        self._admin(request) or \
+        super().get(request,id)
 
   def post(self, request):
-    return super().post(request)
+    return self._authenticate(request) or \
+      super().post(request)
 
   def delete(self, request, id):
-    return super().delete(request,id)
+    return self._authenticate(request) or \
+      super().delete(request,id)
 
   def put(self, request, id):
-    return super().put(request,id)
+    return self._authenticate(request) or \
+      super().put(request,id)
 
