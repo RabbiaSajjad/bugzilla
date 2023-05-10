@@ -2,6 +2,7 @@ import resource
 from django.http import HttpResponse
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
+from api.models import Bug, Project
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -21,7 +22,12 @@ class BaseView(APIView, LimitOffsetPagination):
       resource=self._find_resource(id)
       return Response({ self._model_name: serializer(self._model_name, resource).data })
     else:
+      attribute_value = request.GET.get('role')
       data=self._model.objects.all()
+      if self._model==Project:
+        data=data.prefetch_related('developer', 'quality_assurance')
+      if attribute_value:
+        data = data.filter(role=attribute_value)
       db_data = serializer(self._model_name, self.paginate_queryset(data, request, view=self), many=True)
       return Response({ engine().plural(self._model_name): self.get_paginated_response(db_data.data).data })
 
@@ -38,6 +44,8 @@ class BaseView(APIView, LimitOffsetPagination):
 
   def put(self, request, id):
     resource=self._find_resource(id)
+    import pdb;
+    pdb.set_trace()
     if resource:
       return self._save_resource(serializer(self._model_name,resource,data=request.data, partial=True), request)
 
@@ -51,6 +59,8 @@ class BaseView(APIView, LimitOffsetPagination):
     if resource.is_valid():
       resource.save()
       return Response({ engine().plural(self._model_name): resource.data, "message": "Resource saved successfully" }, status=success_status)
+    import pdb;
+    pdb.set_trace()
     print(resource.errors)
     return HttpResponse("Uprocessable entity")
 
@@ -73,6 +83,18 @@ class BaseView(APIView, LimitOffsetPagination):
   def _admin(self, request):
     if not request.user.role == 0:
       return Response({ 'errors': { 'user': ['You are unauthorized to perform this action.'] } }, status=status.HTTP_403_FORBIDDEN)
+
+  def _check_owner(self, model, user_id, resource_id):
+    if model == 'bug':
+      resource = Bug.objects.filter(creator_id=user_id, id=resource_id)
+    elif model == 'project':
+      resource = Project.objects.filter(manager_id=user_id, id=resource_id)
+    if not resource:
+      return Response({ 'errors': { 'user': ['You are unauthorized to perform this action.'] } }, status=status.HTTP_403_FORBIDDEN)
+
+  def _owner(self, request, id):
+    return self._check_owner(self._model_name, request.user.id, id)
+
 
   @property
   def _model(self):
